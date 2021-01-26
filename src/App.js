@@ -1,66 +1,54 @@
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 import Header from './components/Header'
 import Tasks from './components/Tasks'
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AddTask from './components/AddTask'
 import Footer from "./components/Footer";
 import About from './components/About'
 
 function App() {
-  const [tasks, setTasks] = useState([])
+  const [tasks, setTasks] = useState([
+    {
+      "id": 3,
+      "text": "Run",
+      "day": "Jan 23, 2012",
+      "reminder": false
+    },
+    {
+      "id": 4,
+      "text": "Fly",
+      "day": "Jan 23, 2012",
+      "reminder": true
+    }
+  ])
 
   const [showAddTask, setShowAddTask] = useState(false)
 
-  useEffect(() => {
-    const getTasks = async () => {
-      const tasksFromServer = await fetchTasks()
-      setTasks(tasksFromServer)
-    }
-    getTasks()
-  }, [])
-
-  const fetchTasks = async () => {
-    const response = await fetch('http://localhost:5000/tasks')
-    const data = await response.json()
-    return data;
-  }
-
-  const onDelete = async (id) => {
-    await fetch(`http://localhost:5000/tasks/${id}`, {
-      method: 'DELETE'
-    })
-
+  const onDelete = (id) => {
     setTasks(tasks.filter(task => task.id !== id))
   }
 
-  const onToggle = async (id) => {
+  const onToggle = (id) => {
     let task = tasks.find(task => task.id === id);
     const updatedTask = { ...task, reminder: !task.reminder }
-
-    const response = await fetch(`http://localhost:5000/tasks/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updatedTask)
-    });
-    const data = await response.json()
-
     setTasks(tasks.map(task =>
-      task.id === id ? data : task
+      task.id === id ? updatedTask : task
     ))
   }
 
-  const addTask = async (task) => {
-    const response = await fetch(`http://localhost:5000/tasks/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(task)
-    });
-    const data = await response.json()
-    setTasks([...tasks, data])
+  const generateId = () => {
+    // 1. get all the ids from the tasks array
+    const ids = tasks.map(task => task.id)
+    // 2. get the max of the ids
+    const maxId = Math.max(...ids)
+    // 3. add 1 to the max
+    const newId = maxId + 1
+    // 4. return it
+    return newId
+  }
+  const addTask = (task) => {
+    const taskWithId = {...task, id: generateId()}
+    setTasks([...tasks, taskWithId])
   }
 
   const toggleShowAddTask = () => {
@@ -68,7 +56,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename="/task-tracker">
       <div className="container">
         <Header
           onClick={toggleShowAddTask}
